@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Chatbot</title>
+    <style>
+        :root {
+            /* Ghibli-inspired light theme (default) - Enhanced colors */
+            --background-color: #e8f4ea;
+            --container-bg: rgba(255, 255, 255, 0.85);
+            --text-color: #5c7a6a;
+            --bot-message-bg: #c5e8d5;
+            --user-message-bg: #d6e5f3;
+            --input-border: #adccbe;
+            --button-bg: #7aa25c;
+            --button-text: #ffffff;
+            --border-color: #c9e6d1;
+            --shadow-color: rgba(92, 122, 106, 0.2);
+            --timer-color: #759e75;
+            --header-bg: rgba(122, 162, 92, 0.3);
+            --motivation-btn-bg: #e6a85e;
+            --motivation-btn-text: #ffffff;
+        }
+
+        .dark-theme {
+            /* Rick and Morty-themed mode */
+            --background-color: #111e38;
+            --container-bg: rgba(30, 41, 59, 0.9);
+            --text-color: #a7e9f9;
+            --bot-message-bg: #2a7c3a;
+            --user-message-bg: #3a508b;
+            --input-border: #4a7c78;
+            --button-bg: #5cad4f;
+            --button-text: #f0fff6;
+            --border-color: #4a7c78;
+            --shadow-color: rgba(32, 183, 129, 0.3);
+            --timer-color: #83f52c;
+            --header-bg: rgba(65, 171, 100, 0.5);
+            --motivation-btn-bg: #ff5a8c;
+            --motivation-btn-text: #ffffff;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            transition: all 0.5s ease;
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            transition: background-image 1s ease-in-out;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--container-bg);
+            border-radius: 15px;
+            box-shadow: 0 0 25px var(--shadow-color);
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+            backdrop-filter: blur(8px);
+            border: 2px solid var(--border-color);
+        }
+        
+        .chat-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 18px;
+            border-radius: 18px;
+            max-width: 70%;
+            color: var(--text-color);
+            box-shadow: 0 2px 5px var(--shadow-color);
+            position: relative;
+            line-height: 1.5;
+        }
+        
+        .bot {
+            background-color: var(--bot-message-bg);
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+        
+        .bot::before {
+            content: "🌱";
+            position: absolute;
+            left: -25px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 18px;
+        }
+        
+        .dark-theme .bot::before {
+            content: "🧪";
+        }
+        
+        .user {
+            background-color: var(--user-message-bg);
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .input-area {
+            display: flex;
+            padding: 15px;
+            border-top: 2px solid var(--border-color);
+        }
+        
+        input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid var(--input-border);
+            border-radius: 25px;
+            outline: none;
+            background-color: var(--container-bg);
+            color: var(--text-color);
+            font-size: 16px;
+        }
+        
+        button {
+            margin-left: 10px;
+            padding: 10px 20px;
+            background-color: var(--button-bg);
+            color: var(--button-text);
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px var(--shadow-color);
+        }
+        
+        .timer-display {
+            text-align: center;
+            font-size: 3.5rem;
+            margin: 20px 0 10px 0;
+            color: var(--timer-color);
+            font-weight: bold;
+            text-shadow: 0 2px 5px var(--shadow-color);
+            font-family: 'Courier New', monospace;
+        }
+        
+        .timer-controls {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 15px;
+            gap: 10px;
+        }
+        
+        .timer-controls button {
+            min-width: 100px;
+        }
+        
+        .theme-toggle {
+            padding: 12px;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background-color: var(--button-bg);
+            color: var(--button-text);
+            border: none;
+            box-shadow: 0 2px 8px var(--shadow-color);
+            font-size: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .theme-toggle:hover {
+            transform: rotate(30deg);
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            border-bottom: 2px solid var(--border-color);
+            border-radius: 15px 15px 0 0;
+            background-color: var(--header-bg);
+        }
+        
+        .app-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .app-logo {
+            width: 40px;
+            height: 40px;
+        }
+
+        .motivation-button {
+            display: block;
+            width: 220px;
+            margin: 0 auto 20px auto;
+            padding: 12px 20px;
+            background-color: var(--motivation-btn-bg);
+            color: var(--motivation-btn-text);
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 10px var(--shadow-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .motivation-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px var(--shadow-color);
+        }
+
+        .motivation-button:active {
+            transform: scale(0.98);
+        }
+
+        /* Animation for theme change */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .theme-transition {
+            animation: fadeIn 1s ease;
+        }
+
+        /* Animation for motivation button */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        /* Ghibli-specific leaf animations */
+        @keyframes floatLeaf {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+        
+        .floating-leaf {
+            position: fixed;
+            width: 30px;
+            height: 30px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0.8;
+        }
+        
+        /* Rick and Morty-specific animations */
+        @keyframes portal {
+            0% { transform: scale(0) rotate(0deg); opacity: 0; }
+            20% { transform: scale(1) rotate(180deg); opacity: 1; }
+            80% { transform: scale(1) rotate(360deg); opacity: 1; }
+            100% { transform: scale(0) rotate(540deg); opacity: 0; }
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0) translateX(0) rotate(0deg); }
+            25% { transform: translateY(-15px) translateX(10px) rotate(10deg); }
+            50% { transform: translateY(0) translateX(0) rotate(0deg); }
+            75% { transform: translateY(15px) translateX(-10px) rotate(-10deg); }
+            100% { transform: translateY(0) translateX(0) rotate(0deg); }
+        }
+        
+        .portal {
+            position: fixed;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #83f52c, #2a7c3a);
+            box-shadow: 0 0 20px #83f52c;
+            pointer-events: none;
+            z-index: 999;
+            animation: portal 5s ease-in-out forwards;
+        }
+        
+        .floating-item {
+            position: fixed;
+            font-size: 30px;
+            pointer-events: none;
+            z-index: 1000;
+            animation: float 4s infinite ease-in-out;
+        }
+        
+        /* Theme indication */
+        .theme-name {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 12px;
+            opacity: 0.7;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="app-title">
+                <span class="app-logo">🍃</span>
+                Ghibli Pomodoro
+            </div>
+            <button id="themeToggle" class="theme-toggle">🧪</button>
+        </div>
+        <div class="timer-display" id="timer">25:00</div>
+        <div class="timer-controls">
+            <button id="startBtn">Start</button>
+            <button id="pauseBtn">Pause</button>
+            <button id="resetBtn">Reset</button>
+        </div>
+        <button id="motivationBtn" class="motivation-button pulse">
+            <span id="motivationIcon">✨</span> Ghibli Inspiration
+        </button>
+        <div class="chat-container" id="chatContainer">
+            <div class="message bot">Welcome to Ghibli Pomodoro! I'm your friendly forest spirit helper. I'll keep you company by the lakeside and help you stay focused on your journey. What would you like to work on today?</div>
+        </div>
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="Type your message here...">
+            <button id="sendBtn">Send</button>
+        </div>
+        <div class="theme-name" id="themeName">Ghibli Theme</div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const chatContainer = document.getElementById('chatContainer');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const timerDisplay = document.getElementById('timer');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const themeToggle = document.getElementById('themeToggle');
+        const motivationBtn = document.getElementById('motivationBtn');
+        const motivationIcon = document.getElementById('motivationIcon');
+        const body = document.body;
+        const appTitle = document.querySelector('.app-title');
+        const appLogo = document.querySelector('.app-logo');
+        const themeName = document.getElementById('themeName');
+
+        // Theme state
+        let isDarkTheme = false;
+
+        // Background image arrays
+        const ghibliBackgrounds = [
+            "images/ghibli1.jpg",
+            "images/ghibli2.webp",
+            "images/ghibli3.webp",
+            "images/ghibli4.jpg",
+            "images/ghibli5.png",
+            "images/Ghibli.jpg"
+
+        ];
+        
+        const rickMortyBackgrounds = [
+            "images/rick1.webp",
+            "images/rick2.webp",
+            "images/rick3.jpg",
+            "images/rick4.jpg",
+            "images/rick5.jpg",
+            "images/rick.jpg"
+        ];
+
+        // Pomodoro variables
+        let timeLeft = 25 * 60; // 25 minutes in seconds
+        let timerInterval;
+        let isTimerRunning = false;
+        let isBreak = false;
+        let leafInterval;
+        let portalInterval;
+        let floatingInterval;
+        
+        // Ghibli leaf types
+        const leafTypes = [
+            "🍃", "🌿", "🌱", "🍂", "🍁"
+        ];
+        
+        // Rick and Morty floating elements
+        const rickAndMortyElements = [
+            "🧪", "👽", "🛸", "🔫", "🧠", "👾", "🤖", "🧬", "🦠"
+        ];
+
+        // Set random background image
+        function setThemeBackground() {
+            const backgrounds = isDarkTheme ? rickMortyBackgrounds : ghibliBackgrounds;
+            const randomBg = backgrounds[Math.floor(Math.random() * backgrounds.length)];
+            
+            // Apply with smooth transition
+            body.style.transition = "background-image 1s ease-in-out";
+            body.style.backgroundImage = `url('${randomBg}')`;
+            
+            // Remove transition after it completes
+            setTimeout(() => {
+                body.style.transition = "none";
+            }, 1000);
+        }
+
+        // Preload images for smoother transitions
+        function preloadImages() {
+            const allImages = [...ghibliBackgrounds, ...rickMortyBackgrounds];
+            allImages.forEach(img => {
+                new Image().src = img;
+            });
+        }
+
+        // Theme-specific motivational messages
+        const ghibliMotivationalMessages = [
+            "Like Chihiro facing No-Face, you can overcome any challenge!",
+            "Remember what Totoro teaches us: patience brings wonderful discoveries.",
+            "Just as Kiki found her path, you'll find yours with persistence.",
+            "The wind is rising! You must try to live, as Jiro would say.",
+            "Even Howl's Moving Castle was built one piece at a time, just like your progress.",
+            "As Ponyo runs on waves, you're running toward your goals!",
+            "Princess Mononoke teaches us: balance work and rest for harmony.",
+            "Your spirit is growing stronger with each minute, like Haku's river.",
+            "The Secret World of Arrietty reminds us that even small steps matter!",
+            "Like Nausicaä's patience with the toxic jungle, growth takes time.",
+            "Believe in yourself, just as Chihiro believed she could save her parents.",
+            "Remember what Zeniba said: 'Once you've met someone, you never really forget them.'",
+            "Like the forest spirits, your effort may be invisible but still creates magic.",
+            "Even Calcifer keeps burning through the night. Your focus creates its own magic!",
+            "The bathhouse wasn't built in a day - your progress takes time too.",
+            "As the sun sets over the lake, let your work gently flow like water.",
+            "The creatures in the forest work together, just as your mind and focus do.",
+            "Just as Ashitaka journeyed far, your progress is a worthwhile adventure."
+        ];
+        
+        const rickAndMortyMotivationalMessages = [
+            "Wubba lubba dub dub! You've got this! Keep working!",
+            "You gotta get schwifty with your work. Focus for 25 minutes!",
+            "In some dimension, you've already finished this task. Be that version of yourself!",
+            "Time to get your sh*t together. Put it in a backpack. All your sh*t. So it's together.",
+            "Nobody exists on purpose. Nobody belongs anywhere. Everybody's gonna die. Come watch TV... after you finish your work!",
+            "I turned myself into a productivity machine, Morty! I'm Productive Rick!",
+            "Sometimes science is more art than science. A lot of people don't get that. Just like your focus!",
+            "What about the reality where Hitler cured cancer? The answer is: Don't think about it! Just focus on your task!",
+            "Break the cycle, focus, improve, be better than the you from yesterday.",
+            "To live is to risk it all; otherwise you're just an inert chunk of randomly assembled molecules.",
+            "That's the way the news goes! Keep pushing through!",
+            "Rikki-tikki-tavi, biatch! You're crushing this task!",
+            "Planning to use that brain of yours? Flip the switch labeled 'focus' and get to work!",
+            "Weddings are basically funerals with cake. But this work session? It's gonna be awesome!",
+            "Pain is just your body's way of telling you you're still alive. Like boredom is your mind begging for focus!",
+            "I'm not a monster, I'm just ahead of the curve. Like you will be if you keep focusing!",
+            "I'm Mr. Meeseeks, look at me! Existence is pain! But your productivity doesn't have to be!"
+        ];
+
+        // Theme-specific motivation button icons
+        const ghibliIcons = ["✨", "🌱", "🍃", "🌿", "🌸", "🏮", "🧚", "🐉", "🐋"];
+        const rickAndMortyIcons = ["🧪", "🛸", "👽", "🧠", "🔫", "⚗️", "🔭", "🧬", "🤖"];
+
+        // Get motivational messages based on current theme
+        function getMotivationalMessages() {
+            return isDarkTheme ? rickAndMortyMotivationalMessages : ghibliMotivationalMessages;
+        }
+
+        // Change motivation button icon randomly
+        function changeMotivationIcon() {
+            const icons = isDarkTheme ? rickAndMortyIcons : ghibliIcons;
+            const randomIndex = Math.floor(Math.random() * icons.length);
+            motivationIcon.textContent = icons[randomIndex];
+        }
+
+        // Create and animate floating leaves (Ghibli theme only)
+        function createFloatingLeaves() {
+            clearInterval(leafInterval);
+            
+            if (!isDarkTheme) {
+                leafInterval = setInterval(() => {
+                    if (document.querySelectorAll('.floating-leaf').length < 10) {
+                        const leaf = document.createElement('div');
+                        leaf.classList.add('floating-leaf');
+                        
+                        // Random leaf type
+                        const leafType = leafTypes[Math.floor(Math.random() * leafTypes.length)];
+                        leaf.textContent = leafType;
+                        
+                        // Random position and animation
+                        leaf.style.left = `${Math.random() * 100}vw`;
+                        leaf.style.animationDuration = `${Math.random() * 10 + 5}s`;
+                        leaf.style.animationName = 'floatLeaf';
+                        leaf.style.transform = `rotate(${Math.random() * 360}deg)`;
+                        
+                        document.body.appendChild(leaf);
+                        
+                        // Remove leaf when animation ends
+                        leaf.addEventListener('animationend', () => {
+                            leaf.remove();
+                        });
+                    }
+                }, 2000);
+            }
+        }
+        
+        // Create and animate Rick and Morty elements
+        function createRickAndMortyElements() {
+            clearInterval(portalInterval);
+            clearInterval(floatingInterval);
+            
+            if (isDarkTheme) {
+                // Create portals occasionally
+                portalInterval = setInterval(() => {
+                    if (document.querySelectorAll('.portal').length < 3) {
+                        const portal = document.createElement('div');
+                        portal.classList.add('portal');
+                        
+                        // Random position
+                        portal.style.left = `${Math.random() * 80 + 10}vw`;
+                        portal.style.top = `${Math.random() * 80 + 10}vh`;
+                        
+                        document.body.appendChild(portal);
+                        
+                        // Remove portal when animation ends
+                        portal.addEventListener('animationend', () => {
+                            portal.remove();
+                        });
+                        
+                        // Spawn floating item from portal
+                        setTimeout(() => {
+                            if (document.querySelectorAll('.floating-item').length < 8) {
+                                const item = document.createElement('div');
+                                item.classList.add('floating-item');
+                                
+                                // Random element
+                                const element = rickAndMortyElements[Math.floor(Math.random() * rickAndMortyElements.length)];
+                                item.textContent = element;
+                                
+                                // Position near portal
+                                const portalRect = portal.getBoundingClientRect();
+                                item.style.left = `${portalRect.left + portalRect.width/2}px`;
+                                item.style.top = `${portalRect.top + portalRect.height/2}px`;
+                                
+                                // Random animation speed
+                                item.style.animationDuration = `${Math.random() * 4 + 3}s`;
+                                
+                                document.body.appendChild(item);
+                                
+                                // Remove after some time
+                                setTimeout(() => {
+                                    item.remove();
+                                }, Math.random() * 8000 + 6000);
+                            }
+                        }, 1000);
+                    }
+                }, 6000);
+                
+                // Create floating items regularly
+                floatingInterval = setInterval(() => {
+                    if (document.querySelectorAll('.floating-item').length < 8) {
+                        const item = document.createElement('div');
+                        item.classList.add('floating-item');
+                        
+                        // Random element
+                        const element = rickAndMortyElements[Math.floor(Math.random() * rickAndMortyElements.length)];
+                        item.textContent = element;
+                        
+                        // Random position
+                        item.style.left = `${Math.random() * 90 + 5}vw`;
+                        item.style.top = `${Math.random() * 90 + 5}vh`;
+                        
+                        // Random animation speed
+                        item.style.animationDuration = `${Math.random() * 4 + 3}s`;
+                        
+                        document.body.appendChild(item);
+                        
+                        // Remove after some time
+                        setTimeout(() => {
+                            item.remove();
+                        }, Math.random() * 8000 + 6000);
+                    }
+                }, 4000);
+            }
+        }
+
+        // Chatbot responses
+        const chatbotResponses = {
+            greeting: ["hello", "hi", "hey", "howdy"],
+            timer: ["timer", "pomodoro", "set timer", "start timer"],
+            motivation: ["motivate", "motivation", "inspire", "help me focus"],
+            break: ["break", "rest", "pause", "stop"],
+            help: ["help", "how", "what can you do", "commands"],
+            custom: ["custom", "set custom", "change time"],
+            theme: ["theme", "toggle theme", "dark mode", "light mode", "switch theme", "change theme", "rick", "morty", "ghibli"]
+        };
+
+        // Functions
+        function addMessage(message, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', sender);
+            messageDiv.textContent = message;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function getRandomMotivation() {
+            const messages = getMotivationalMessages();
+            const randomIndex = Math.floor(Math.random() * messages.length);
+            return messages[randomIndex];
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function startTimer() {
+            if (!isTimerRunning) {
+                isTimerRunning = true;
+                timerInterval = setInterval(() => {
+                    timeLeft--;
+                    timerDisplay.textContent = formatTime(timeLeft);
+                    
+                    // Provide random motivation every 5 minutes
+                    if (timeLeft > 0 && timeLeft % 300 === 0) {
+                        addMessage(getRandomMotivation(), 'bot');
+                    }
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(timerInterval);
+                        isTimerRunning = false;
+                        
+                        if (isBreak) {
+                            addMessage(isDarkTheme ? 
+                                "Break over, Morty! *BURP* Time to get back to work! No excuses!" : 
+                                "Your rest by the lakeside is over! Ready to continue your adventure?", 'bot');
+                            isBreak = false;
+                            timeLeft = 25 * 60; // Reset to work time
+                        } else {
+                            addMessage(isDarkTheme ? 
+                                "PICKLE RIIIICK! You did it! Take a 5-minute break to recharge before we go on more adventures!" : 
+                                "Wonderful work! You've completed a full pomodoro. Take a 5-minute break to enjoy the sunset over the lake!", 'bot');
+                            isBreak = true;
+                            timeLeft = 5 * 60; // 5 min break
+                        }
+                        timerDisplay.textContent = formatTime(timeLeft);
+                        setThemeBackground(); // Change background when timer completes
+                    }
+                }, 1000);
+            }
+        }
+
+        function pauseTimer() {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            timeLeft = 25 * 60;
+            timerDisplay.textContent = formatTime(timeLeft);
+            isBreak = false;
+        }
+
+        function toggleTheme() {
+            isDarkTheme = !isDarkTheme;
+            body.classList.add('theme-transition');
+            
+            if (isDarkTheme) {
+                body.classList.add('dark-theme');
+                themeToggle.textContent = '🌱';
+                appTitle.innerHTML = '<span class="app-logo">🧪</span> Rick and Morty Pomodoro';
+                document.title = "Rick and Morty Pomodoro";
+                motivationBtn.textContent = "Dimension C-137 Wisdom";
+                motivationBtn.prepend(motivationIcon);
+                themeName.textContent = "Rick and Morty Theme";
+                
+                // Stop leaf animations in Rick and Morty theme
+                clearInterval(leafInterval);
+                document.querySelectorAll('.floating-leaf').forEach(leaf => leaf.remove());
+                
+                // Start Rick and Morty animations
+                createRickAndMortyElements();
+            } else {
+                body.classList.remove('dark-theme');
+                themeToggle.textContent = '🧪';
+                appTitle.innerHTML = '<span class="app-logo">🍃</span> Ghibli Pomodoro';
+                document.title = "Ghibli Pomodoro";
+                motivationBtn.textContent = "Ghibli Inspiration";
+                motivationBtn.prepend(motivationIcon);
+                themeName.textContent = "Ghibli Theme";
+                
+                // Start leaf animations in Ghibli theme
+                createFloatingLeaves();
+                
+                // Stop Rick and Morty animations
+                clearInterval(portalInterval);
+                clearInterval(floatingInterval);
+                document.querySelectorAll('.portal').forEach(portal => portal.remove());
+                document.querySelectorAll('.floating-item').forEach(item => item.remove());
+            }
+            
+            // Change background and motivation button icon
+            setThemeBackground();
+            changeMotivationIcon();
+            
+            // After animation completes, remove the class
+            setTimeout(() => {
+                body.classList.remove('theme-transition');
+            }, 1000);
+            
+            // Save theme preference in local storage
+            localStorage.setItem('darkTheme', isDarkTheme);
+        }
+
+        function processUserInput(input) {
+            const lowerInput = input.toLowerCase();
+            
+            // Check for theme toggle
+            if (chatbotResponses.theme.some(word => lowerInput.includes(word))) {
+                // Check for specific theme requests
+                if ((lowerInput.includes('rick') || lowerInput.includes('morty')) && !isDarkTheme) {
+                    toggleTheme();
+                    return "Wubba lubba dub dub! Switching to Rick and Morty theme! Let's get schwifty with your productivity!";
+                } else if ((lowerInput.includes('ghibli') || lowerInput.includes('light')) && isDarkTheme) {
+                    toggleTheme();
+                    return "Switching to Ghibli theme! Return to the peaceful lakeside to focus on your work.";
+                } else if (lowerInput.includes('toggle') || lowerInput.includes('switch') || 
+                          ((lowerInput.includes('rick') || lowerInput.includes('morty')) && !isDarkTheme) || 
+                          (lowerInput.includes('ghibli') && isDarkTheme)) {
+                    toggleTheme();
+                    return isDarkTheme ? 
+                        "Wubba lubba dub dub! Switching to Rick and Morty theme! Let's get schwifty with your productivity!" : 
+                        "Switching to Ghibli theme! Return to the peaceful lakeside to focus on your work.";
+                }
+                
+                return isDarkTheme ? 
+                    "We're already in Rick and Morty theme. You can say 'switch to Ghibli theme' if you'd like to return to the lakeside." : 
+                    "We're already in Ghibli theme. You can say 'switch to Rick and Morty theme' if you'd like to get schwifty.";
+            }
+            
+            // Check for greeting
+            if (chatbotResponses.greeting.some(word => lowerInput.includes(word))) {
+                return isDarkTheme ?
+                    "*BURP* Hey Morty! Ready to get productive across dimensions?" :
+                    "Hello lakeside friend! How can I help with your journey through focused work today?";
+            }
+            
+            // Check for help
+            if (chatbotResponses.help.some(word => lowerInput.includes(word))) {
+                return isDarkTheme ?
+                    "*BURP* I can help you with your interdimensional productivity! Try: starting a timer, getting Rick-style motivation, taking breaks, or switching to the Ghibli theme if you need a break from the madness. Click the Wisdom button for a boost!" :
+                    "I can help you with your magical Ghibli-inspired work journey! Try: starting a timer, getting Ghibli wisdom, taking breaks, or switching to Rick and Morty theme if you prefer chaotic adventures. Click the Inspiration button whenever you need it!";
+            }
+            
+            // Check for timer commands
+            if (chatbotResponses.timer.some(word => lowerInput.includes(word))) {
+                resetTimer();
+                startTimer();
+                return isDarkTheme ?
+                    "*BURP* Timer launched! Focus for the next 25 minutes across all dimensions!" :
+                    "Timer started! Stay focused for the next 25 minutes as the sun sets over the lake. I'll be here to support you like the spirits of the forest!";
+            }
+            
+            // Check for motivation commands
+            if (chatbotResponses.motivation.some(word => lowerInput.includes(word))) {
+                return isDarkTheme ?
+                    getRandomMotivation() :
+                    getRandomMotivation();
+            }
+            
+            // Check for break commands
+            if (chatbotResponses.break.some(word => lowerInput.includes(word))) {
+                pauseTimer();
+                timeLeft = 5 * 60;
+                isBreak = true;
+                timerDisplay.textContent = formatTime(timeLeft);
+                startTimer();
+                return isDarkTheme ?
+                    "*BURP* Taking a 5-minute break now. Don't screw around too much, Morty!" :
+                    "Taking a 5-minute break now. Enjoy the gentle waves of the lake and the rustling leaves.";
+            }
+            
+            // Check for custom timer
+            if (chatbotResponses.custom.some(word => lowerInput.includes(word))) {
+                const timeMatch = lowerInput.match(/\d+/);
+                if (timeMatch) {
+                    const minutes = parseInt(timeMatch[0]);
+                    if (minutes > 0 && minutes <= 120) {
+                        timeLeft = minutes * 60;
+                        timerDisplay.textContent = formatTime(timeLeft);
+                        return isDarkTheme ?
+                            `*BURP* Timer set to ${minutes} minutes, Morty! Now get to work across ${Math.floor(Math.random() * 100)} dimensions!` :
+                            `Timer set to ${minutes} minutes. May the forest spirits guide your focus!`;
+                    }
+                }
+                return isDarkTheme ?
+                    "*BURP* You gotta specify a time between 1 and 120 minutes, Morty!" :
+                    "Please specify a time between 1 and 120 minutes for your custom timer.";
+            }
+            
+            // Default response for unrecognized input
+            return isDarkTheme ?
+                "*BURP* I don't know what you're talking about, Morty! Try asking for help or just focus on your work!" :
+                "I'm not quite sure what you mean. Would you like help with the timer, some motivation, or to take a break?";
+        }
+
+        // Event Listeners
+        sendBtn.addEventListener('click', () => {
+            const message = userInput.value.trim();
+            if (message) {
+                addMessage(message, 'user');
+                userInput.value = '';
+                
+                // Simulate typing delay
+                setTimeout(() => {
+                    const response = processUserInput(message);
+                    addMessage(response, 'bot');
+                }, 1000);
+            }
+        });
+
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendBtn.click();
+            }
+        });
+
+        startBtn.addEventListener('click', () => {
+            startTimer();
+            addMessage(isDarkTheme ? 
+                "*BURP* Timer started! Let's get schwifty with this work!" : 
+                "Timer started! May the forest spirits guide your focus.", 'bot');
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            pauseTimer();
+            addMessage(isDarkTheme ? 
+                "Paused! *BURP* Don't get distracted by intergalactic cable!" : 
+                "Timer paused. Take a moment to breathe in the fresh air.", 'bot');
+        });
+
+        resetBtn.addEventListener('click', () => {
+            resetTimer();
+            addMessage(isDarkTheme ? 
+                "*BURP* Timer reset! Ready for another dimension of productivity?" : 
+                "Timer reset. Every new beginning comes from some other beginning's end.", 'bot');
+        });
+
+        themeToggle.addEventListener('click', toggleTheme);
+
+        motivationBtn.addEventListener('click', () => {
+            addMessage(getRandomMotivation(), 'bot');
+            changeMotivationIcon();
+        });
+
+        // Initialize
+        function initialize() {
+            // Load theme preference from local storage
+            const savedTheme = localStorage.getItem('darkTheme');
+            if (savedTheme === 'true') {
+                isDarkTheme = true;
+                toggleTheme();
+            } else {
+                // Start with Ghibli theme animations
+                createFloatingLeaves();
+            }
+            
+            // Preload images
+            preloadImages();
+            
+            // Set initial background
+            setThemeBackground();
+            
+            // Set initial timer display
+            timerDisplay.textContent = formatTime(timeLeft);
+            
+            // Change motivation button icon periodically
+            setInterval(changeMotivationIcon, 5000);
+        }
+
+        // Start the app
+        initialize();
+    </script>
+</body>
+</html>
